@@ -12,3 +12,5 @@ preprocessed/*
 !preprocessed/.gitkeep
 
 checkpoints/
+export_model/
+source_text/

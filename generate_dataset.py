@@ -14,7 +14,7 @@ from pathlib import Path
 BALCON_PATH = os.path.expanduser("~/.wine/drive_c/Program Files (x86)/Balabolka/balcon.exe")
 VOICE_NAME = "Nicolai"
 DICT_PATH = os.path.expanduser("~/.wine/drive_c/Program Files (x86)/Balabolka/michelangelo.dic")
-INPUT_TEXT_FILE = "source_text.txt"
+INPUT_TEXT_FILE = "source_text/source_text.txt"
 OUTPUT_DIR = "dataset_nikolai"
 
 MIN_SENTENCE_LEN = 15
