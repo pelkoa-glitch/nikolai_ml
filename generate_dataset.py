@@ -19,7 +19,7 @@ BALCON_PATH = os.path.expanduser("~/.wine/drive_c/Program Files (x86)/Balabolka/
 VOICE_NAME = "Nicolai"
 DICT_PATH = os.path.expanduser("~/.wine/drive_c/Program Files (x86)/Balabolka/michelangelo.dic")
 
-INPUT_TEXT_ORIGINAL = "source_text/en_source.txt" # Относительный путь от корня проекта
+INPUT_TEXT_ORIGINAL = "source_text/source_text.txt" # Относительный путь от корня проекта
 OUTPUT_DIR = "dataset_nikolai"
 METADATA_FILE = "metadata.csv"
 
