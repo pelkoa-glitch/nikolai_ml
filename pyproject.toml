@@ -7,7 +7,7 @@ authors = [
     { name = "pelkoa-glitch", email = "sergey.koroteev.dev@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["g2p-en (>=2.1.0,<3.0.0)", "numpy (==1.26.4)", "scipy (==1.11.4)", "nltk (>=3.10.3,<4.0.0)"]
 
 [project.scripts]
 nikolai-ml = "nikolai_ml:main"
