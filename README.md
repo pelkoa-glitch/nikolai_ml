@@ -1,145 +1,71 @@
-# Лютейший вайбкод
+# Nikolai ML: TTS Training Pipeline
 
+Docker-проект для создания и обучения русскоязычной TTS-модели (голос "Nicolai") на базе **Piper** с использованием GPU.
 
-# TTS Training
+Особенность проекта — автоматическая подготовка датасета с идеальной фонетической транслитерацией английских слов (IT-терминов) для естественного звучания.
 
-Docker-проект для обучения TTS-моделей на GPU.
+## 🛠 Requirements
 
-## Requirements
+*   Docker & Docker Compose
+*   NVIDIA GPU + NVIDIA Container Toolkit
+*   Python 3.10+ (для скриптов генерации датасета)
+*   Wine (для работы Acapela Balabolka в Linux)
 
-* Docker
-* Docker Compose
-* NVIDIA GPU + NVIDIA Container Toolkit (для NVIDIA)
-* Датасет в поддерживаемом формате
+## 🚀 Quick Start
 
-## Quick Start
-
-### 1. Clone
+### 1. Clone & Setup
 
 ```bash
 git clone https://github.com/pelkoa-glitch/nikolai_ml
 cd nikolai_ml
+
+# Установка зависимостей для генерации датасета
+poetry install --no-root
 ```
 
-### 2. Build
+### 2. Prepare Dataset (Генерация аудио и метаданных)
+
+Этот этап создает файлы `.wav` и `metadata.csv`. Скрипт использует голос Acapela Nicolai и библиотеку `g2p_en` для точной транслитерации.
+
+1.  Поместите исходный текст в `source_text/source_text.txt`.
+2.  Запустите генератор:
+
+```bash
+poetry run python generate_dataset.py
+```
+
+*Результат:* Папка `dataset_nikolai/` с аудиофайлами и файлом `metadata.csv`.
+
+### 3. Build & Start Docker
 
 ```bash
 docker compose build
-```
-
-### 3. Start
-
-```bash
 docker compose up -d
 ```
 
-### 4. Enter container
+### 4. Enter Container
 
 ```bash
 docker exec -it piper-train-nikolai bash
 ```
 
-## Dataset
+## 📂 Dataset Structure
 
-Поместите исходный датасет в директорию проекта:
+Проект ожидает датасет в формате LJSpeech внутри контейнера по пути `/nikolai_ml/dataset_nikolai/`:
 
 ```text
-dataset/
-├── metadata.csv
-├── audiofile_0.wav
-├── audiofile_1.wav
-└── audiofile_n.wav
+dataset_nikolai/
+├── metadata.csv       # Формат: filename.wav|transcription text
+├── nikolai_00000.wav
+├── nikolai_00001.wav
+└── ...
 ```
 
-Подготовьте датасет:
+## ⚙️ Preprocessing
+
+Внутри контейнера подготовьте данные к обучению:
 
 ```bash
-python -m piper_train.preprocess \
-    --input-dir <input-dir> \
-    --output-dir <output-dir> \
-    --language <language> \
-    --sample-rate <sample-rate> \
-    --dataset-format ljspeech \
-    --single-speaker
-```
-
-## Training
-
-Запустите обучение:
-
-```bash
-python -m piper_train \
-    --dataset-dir <preprocessed-dir> \
-    --default_root_dir <checkpoints-dir> \
-    --accelerator gpu \
-    --devices 1 \
-    --batch-size <batch-size> \
-    --max_epochs <max-epochs> \
-    --checkpoint-epochs <checkpoint-interval> \
-    --resume_from_checkpoint <path-to-checkpoint>
-```
-
-`batch-size` зависит от доступной VRAM.
-Если появляется `CUDA out of memory`, уменьшите его.
-
-## Checkpoints
-
-Checkpoints сохраняются в указанной директории и позволяют продолжить обучение после остановки.
-
-Не удаляйте их во время обучения.
-
-## Тестироание
-### Команда для генерации wav на выбранном чекпоинте
-```
-head -n 16 /nikolai_ml/preprocessed/dataset.jsonl | python -m piper_train.infer \ 
-    --checkpoint /nikolai_ml/checkpoints/lightning_logs/version_2/checkpoints/epoch=99-step=90600.ckpt \ 
-    --output-dir /nikolai_ml/output_test \ 
-    --sample-rate 22050
-```
-
-## Экспорт модели
-```
-python -m piper_train.export_onnx \
-    <path-to-checkpoint> \
-    <destination-folder>/<model-name>.onnx
-```
-
-## Stop
-
-```bash
-docker compose down
-```
-
-Для повторного запуска:
-
-```bash
-docker compose up -d
-```
-
-## GPU
-
-Для NVIDIA можно проверить доступность GPU:
-
-```bash
-nvidia-smi
-```
-
-Готово — после запуска команды `piper_train` начнётся обучение.
-
-## Примеры команд
-
-Start container:
-```
-docker compose up --build -d
-```
-
-Open a bash console in the container.:
-```
-docker exec -it piper-train-nikolai bash
-```
-
-Preprocess script:
-```
 python -m piper_train.preprocess \
     --input-dir /nikolai_ml/dataset_nikolai \
     --output-dir /nikolai_ml/preprocessed \
@@ -150,10 +76,11 @@ python -m piper_train.preprocess \
     --max-workers 4
 ```
 
-Start script:
-```
-cd /nikolai_ml
+## 🧠 Training
 
+Запуск обучения на GPU:
+
+```bash
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 python -m piper_train \
@@ -169,11 +96,39 @@ python -m piper_train \
     --inter-channels 96 \
     --filter-channels 384 \
     --n-layers 4 \
-    --n-heads 2 \
-    --resume_from_checkpoint /nikolai_ml/checkpoints/lightning_logs/version_0/checkpoints/epoch=49-step=45300.ckpt
+    --n-heads 2
 ```
 
-Delete logs and checkpoints
+> **Note:** Если возникает `CUDA out of memory`, уменьшите `--batch-size`.
+
+## 🧪 Testing & Inference
+
+Проверка качества модели на тестовых фразах:
+
+```bash
+head -n 16 /nikolai_ml/preprocessed/dataset.jsonl | python -m piper_train.infer \ 
+    --checkpoint /path/to/your/checkpoint.ckpt \ 
+    --output-dir /nikolai_ml/output_test \ 
+    --sample-rate 22050
 ```
-rm -rf checkpoints/lightning_logs
+
+## 📦 Export to ONNX
+
+Экспорт модели для использования в Piper или других приложениях:
+
+```bash
+python -m piper_train.export_onnx \
+    /path/to/your/checkpoint.ckpt \
+    /nikolai_ml/export/model.onnx
+```
+
+## 🛑 Management
+
+*   **Stop:** `docker compose down`
+*   **Restart:** `docker compose up -d`
+*   **Check GPU:** `nvidia-smi`
+*   **Clean Logs:** `rm -rf checkpoints/lightning_logs`
+
+---
+*Created with ❤️ for high-quality Russian TTS.*
 ```
