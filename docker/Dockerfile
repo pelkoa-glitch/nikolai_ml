@@ -71,7 +71,8 @@ RUN uv pip install \
         piper-phonemize==1.1.0 \
         librosa==0.10.2.post1 \
         numpy==1.26.4 \
-        onnxruntime==1.20.1
+        onnxruntime==1.20.1 \
+        onnx==1.23.0
 
 # ------------------------------------------------------------
 # Training/runtime compatibility dependencies
